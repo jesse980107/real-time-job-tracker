@@ -1,0 +1,30 @@
+{
+  "website_info": {
+    "name": "Google Career",
+    "base_url": "https://careers.google.com/jobs/results/",
+    "enabled": true
+  },
+  "scraping_config": {
+    "interval": 3600,
+    "max_pages": 5,
+    "selectors": {
+      "job_card": "[data-job-id]",
+      "title": "h3",
+      "location": "[data-gtm-category='jobs'] span",
+      "link": "a",
+      "description": ".gc-job-tag",
+      "posted_date": ".gc-job-post-date"
+    }
+  },
+  "search_params": {
+    "keywords": ["software engineer", "data scientist", "product manager"],
+    "locations": ["Mountain View", "New York", "San Francisco"],
+    "categories": ["software-engineering", "data-science", "product-management"]
+  },
+  "playwright_options": {
+    "wait_for_selector": "[data-job-id]",
+    "scroll_behavior": true,
+    "wait_timeout": 10000,
+    "page_load_timeout": 30000
+  }
+}
