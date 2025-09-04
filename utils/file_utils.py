@@ -1,6 +1,6 @@
 """
-文件操作工具模块
-提供JSON文件的读写和数据处理功能
+File operation utility module
+Provides JSON file reading/writing and data processing functionality
 """
 
 import json
@@ -13,31 +13,31 @@ from datetime import datetime
 
 def load_json(file_path: str, default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    加载JSON文件
+    Load JSON file
     
     Args:
-        file_path: JSON文件路径
-        default: 如果文件不存在时返回的默认值
+        file_path: JSON file path
+        default: Default value to return if file does not exist
         
     Returns:
-        解析后的JSON数据
+        Parsed JSON data
     """
     try:
         if not os.path.exists(file_path):
             if default is not None:
                 return default
-            raise FileNotFoundError(f"文件不存在: {file_path}")
+            raise FileNotFoundError(f"File does not exist: {file_path}")
         
         with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
             
     except json.JSONDecodeError as e:
-        logging.error(f"JSON解析错误 {file_path}: {e}")
+        logging.error(f"JSON parsing error {file_path}: {e}")
         if default is not None:
             return default
         raise
     except Exception as e:
-        logging.error(f"读取文件错误 {file_path}: {e}")
+        logging.error(f"File reading error {file_path}: {e}")
         if default is not None:
             return default
         raise
@@ -45,18 +45,18 @@ def load_json(file_path: str, default: Optional[Dict[str, Any]] = None) -> Dict[
 
 def save_json(file_path: str, data: Dict[str, Any], indent: int = 2) -> bool:
     """
-    保存数据到JSON文件
+    Save data to JSON file
     
     Args:
-        file_path: JSON文件路径
-        data: 要保存的数据
-        indent: JSON格式化缩进
+        file_path: JSON file path
+        data: Data to save
+        indent: JSON formatting indentation
         
     Returns:
-        是否保存成功
+        Whether save was successful
     """
     try:
-        # 确保目录存在
+        # Ensure directory exists
         Path(file_path).parent.mkdir(parents=True, exist_ok=True)
         
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -65,73 +65,73 @@ def save_json(file_path: str, data: Dict[str, Any], indent: int = 2) -> bool:
         return True
         
     except Exception as e:
-        logging.error(f"保存JSON文件错误 {file_path}: {e}")
+        logging.error(f"Error saving JSON file {file_path}: {e}")
         return False
 
 
 def backup_file(file_path: str, backup_dir: str = "backups") -> bool:
     """
-    备份文件
+    Backup file
     
     Args:
-        file_path: 要备份的文件路径
-        backup_dir: 备份目录
+        file_path: File path to backup
+        backup_dir: Backup directory
         
     Returns:
-        是否备份成功
+        Whether backup was successful
     """
     try:
         if not os.path.exists(file_path):
             return False
         
-        # 创建备份目录
+        # Create backup directory
         Path(backup_dir).mkdir(exist_ok=True)
         
-        # 生成备份文件名
+        # Generate backup filename
         file_name = Path(file_path).name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"{timestamp}_{file_name}"
         backup_path = os.path.join(backup_dir, backup_name)
         
-        # 复制文件
+        # Copy file
         import shutil
         shutil.copy2(file_path, backup_path)
         
-        logging.info(f"文件备份成功: {file_path} -> {backup_path}")
+        logging.info(f"File backup successful: {file_path} -> {backup_path}")
         return True
         
     except Exception as e:
-        logging.error(f"备份文件错误 {file_path}: {e}")
+        logging.error(f"File backup error {file_path}: {e}")
         return False
 
 
 def ensure_directory(dir_path: str) -> bool:
     """
-    确保目录存在
+    Ensure directory exists
     
     Args:
-        dir_path: 目录路径
+        dir_path: Directory path
         
     Returns:
-        是否成功创建或目录已存在
+        Whether directory was successfully created or already exists
     """
     try:
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         return True
     except Exception as e:
-        logging.error(f"创建目录错误 {dir_path}: {e}")
+        logging.error(f"Directory creation error {dir_path}: {e}")
         return False
 
 
 def get_file_size(file_path: str) -> int:
     """
-    获取文件大小
+    Get file size
     
     Args:
-        file_path: 文件路径
+        file_path: File path
         
     Returns:
-        文件大小（字节）
+        File size in bytes
     """
     try:
         return os.path.getsize(file_path)
@@ -141,12 +141,12 @@ def get_file_size(file_path: str) -> int:
 
 def is_file_empty(file_path: str) -> bool:
     """
-    检查文件是否为空
+    Check if file is empty
     
     Args:
-        file_path: 文件路径
+        file_path: File path
         
     Returns:
-        文件是否为空
+        Whether file is empty
     """
     return get_file_size(file_path) == 0

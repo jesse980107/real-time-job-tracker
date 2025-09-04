@@ -1,6 +1,6 @@
 """
-去重工具模块
-提供职位数据去重和比较功能
+Deduplication utility module
+Provides job data deduplication and comparison functionality
 """
 
 import hashlib
@@ -11,15 +11,15 @@ import logging
 
 def generate_job_hash(job: Dict[str, Any]) -> str:
     """
-    生成职位的唯一哈希值
+    Generate unique hash for job
     
     Args:
-        job: 职位数据字典
+        job: Job data dictionary
         
     Returns:
-        职位的哈希值
+        Job hash value
     """
-    # 使用关键字段生成哈希
+    # Use key fields to generate hash
     key_fields = [
         job.get("title", ""),
         job.get("company", ""),
@@ -27,45 +27,45 @@ def generate_job_hash(job: Dict[str, Any]) -> str:
         job.get("url", "")
     ]
     
-    # 创建用于哈希的字符串
+    # Create string for hashing
     hash_string = "|".join(str(field).strip().lower() for field in key_fields)
     
-    # 生成MD5哈希
+    # Generate MD5 hash
     return hashlib.md5(hash_string.encode('utf-8')).hexdigest()
 
 
 def deduplicate_jobs(existing_jobs: List[Dict[str, Any]], 
                     new_jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    去重处理职位数据
+    Deduplicate job data
     
     Args:
-        existing_jobs: 现有职位列表
-        new_jobs: 新抓取的职位列表
+        existing_jobs: List of existing jobs
+        new_jobs: List of newly scraped jobs
         
     Returns:
-        去重后的职位列表
+        Deduplicated job list
     """
     try:
-        # 创建现有职位的哈希集合
+        # Create hash set for existing jobs
         existing_hashes = set()
         for job in existing_jobs:
             if not job.get("id"):
                 job["id"] = generate_job_hash(job)
             existing_hashes.add(job["id"])
         
-        # 处理新职位
+        # Process new jobs
         deduplicated_jobs = existing_jobs.copy()
         new_job_count = 0
         
         for job in new_jobs:
-            # 生成新职位的哈希ID
+            # Generate hash ID for new job
             job_hash = generate_job_hash(job)
             job["id"] = job_hash
             
-            # 检查是否重复
+            # Check for duplicates
             if job_hash not in existing_hashes:
-                # 添加时间戳
+                # Add timestamp
                 job["scraped_date"] = datetime.now().isoformat()
                 job["status"] = "active"
                 
@@ -73,32 +73,32 @@ def deduplicate_jobs(existing_jobs: List[Dict[str, Any]],
                 existing_hashes.add(job_hash)
                 new_job_count += 1
             else:
-                # 更新现有职位的最后抓取时间
+                # Update last scrape time for existing job
                 _update_existing_job(deduplicated_jobs, job_hash, job)
         
-        logging.info(f"去重完成: 现有职位 {len(existing_jobs)}, 新增职位 {new_job_count}")
+        logging.info(f"Deduplication completed: existing jobs {len(existing_jobs)}, new jobs {new_job_count}")
         return deduplicated_jobs
         
     except Exception as e:
-        logging.error(f"去重处理错误: {e}")
+        logging.error(f"Deduplication processing error: {e}")
         return existing_jobs
 
 
 def _update_existing_job(jobs: List[Dict[str, Any]], job_id: str, new_job: Dict[str, Any]) -> None:
     """
-    更新现有职位的信息
+    Update information of existing job
     
     Args:
-        jobs: 职位列表
-        job_id: 职位ID
-        new_job: 新的职位信息
+        jobs: Job list
+        job_id: Job ID
+        new_job: New job information
     """
     for job in jobs:
         if job.get("id") == job_id:
-            # 更新最后抓取时间
+            # Update last seen time
             job["last_seen"] = datetime.now().isoformat()
             
-            # 更新可能变化的字段
+            # Update fields that may change
             updatable_fields = ["description", "posted_date", "salary", "employment_type"]
             for field in updatable_fields:
                 if field in new_job and new_job[field]:
@@ -109,13 +109,13 @@ def _update_existing_job(jobs: List[Dict[str, Any]], job_id: str, new_job: Dict[
 
 def find_duplicate_jobs(jobs: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
     """
-    查找重复的职位
+    Find duplicate jobs
     
     Args:
-        jobs: 职位列表
+        jobs: Job list
         
     Returns:
-        重复职位的分组列表
+        List of duplicate job groups
     """
     hash_groups = {}
     
@@ -126,20 +126,20 @@ def find_duplicate_jobs(jobs: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]
             hash_groups[job_hash] = []
         hash_groups[job_hash].append(job)
     
-    # 返回包含重复项的组
+    # Return groups containing duplicates
     return [group for group in hash_groups.values() if len(group) > 1]
 
 
 def remove_inactive_jobs(jobs: List[Dict[str, Any]], days_threshold: int = 30) -> List[Dict[str, Any]]:
     """
-    移除长时间未见的职位
+    Remove jobs not seen for a long time
     
     Args:
-        jobs: 职位列表
-        days_threshold: 天数阈值
+        jobs: Job list
+        days_threshold: Days threshold
         
     Returns:
-        过滤后的职位列表
+        Filtered job list
     """
     try:
         from datetime import datetime, timedelta
@@ -161,29 +161,29 @@ def remove_inactive_jobs(jobs: List[Dict[str, Any]], days_threshold: int = 30) -
                     else:
                         removed_count += 1
                 except ValueError:
-                    # 如果日期格式有问题，保留职位
+                    # If date format has problems, keep the job
                     active_jobs.append(job)
             else:
-                # 如果没有时间信息，保留职位
+                # If no time information, keep the job
                 active_jobs.append(job)
         
-        logging.info(f"移除过期职位: {removed_count} 个")
+        logging.info(f"Removed expired jobs: {removed_count}")
         return active_jobs
         
     except Exception as e:
-        logging.error(f"移除过期职位错误: {e}")
+        logging.error(f"Error removing expired jobs: {e}")
         return jobs
 
 
 def get_job_statistics(jobs: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    获取职位统计信息
+    Get job statistics
     
     Args:
-        jobs: 职位列表
+        jobs: Job list
         
     Returns:
-        统计信息字典
+        Statistics dictionary
     """
     if not jobs:
         return {"total": 0}
@@ -198,24 +198,24 @@ def get_job_statistics(jobs: List[Dict[str, Any]]) -> Dict[str, Any]:
         }
         
         for job in jobs:
-            # 按公司统计
-            company = job.get("company", "未知")
+            # Statistics by company
+            company = job.get("company", "Unknown")
             stats["by_company"][company] = stats["by_company"].get(company, 0) + 1
             
-            # 按地点统计
-            location = job.get("location", "未知")
+            # Statistics by location
+            location = job.get("location", "Unknown")
             stats["by_location"][location] = stats["by_location"].get(location, 0) + 1
             
-            # 按来源统计
-            source = job.get("source", "未知")
+            # Statistics by source
+            source = job.get("source", "Unknown")
             stats["by_source"][source] = stats["by_source"].get(source, 0) + 1
             
-            # 按状态统计
-            status = job.get("status", "未知")
+            # Statistics by status
+            status = job.get("status", "Unknown")
             stats["by_status"][status] = stats["by_status"].get(status, 0) + 1
         
         return stats
         
     except Exception as e:
-        logging.error(f"统计信息生成错误: {e}")
+        logging.error(f"Error generating statistics: {e}")
         return {"total": len(jobs)}

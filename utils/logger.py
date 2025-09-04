@@ -1,6 +1,6 @@
 """
-日志工具模块
-提供统一的日志配置和管理功能
+Logging utility module
+Provides unified logging configuration and management functionality
 """
 
 import logging
@@ -11,44 +11,44 @@ from pathlib import Path
 
 def setup_logger(log_level: str = "INFO", log_file: str = "logs/scraper.log") -> logging.Logger:
     """
-    设置日志记录器
+    Setup logger
     
     Args:
-        log_level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: 日志文件路径
+        log_level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        log_file: Log file path
         
     Returns:
-        配置好的logger实例
+        Configured logger instance
     """
-    # 创建日志目录
+    # Create log directory
     log_dir = Path(log_file).parent
     log_dir.mkdir(exist_ok=True)
     
-    # 创建logger
+    # Create logger
     logger = logging.getLogger("job_tracker")
     logger.setLevel(getattr(logging, log_level.upper()))
     
-    # 避免重复添加handler
+    # Avoid adding duplicate handlers
     if logger.handlers:
         return logger
     
-    # 创建格式化器
+    # Create formatter
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     
-    # 文件处理器
+    # File handler
     file_handler = logging.FileHandler(log_file, encoding='utf-8')
     file_handler.setLevel(getattr(logging, log_level.upper()))
     file_handler.setFormatter(formatter)
     
-    # 控制台处理器
+    # Console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(getattr(logging, log_level.upper()))
     console_handler.setFormatter(formatter)
     
-    # 添加处理器
+    # Add handlers
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     
@@ -58,33 +58,33 @@ def setup_logger(log_level: str = "INFO", log_file: str = "logs/scraper.log") ->
 def log_scraper_result(logger: logging.Logger, website: str, job_count: int, 
                       new_jobs: int, errors: int = 0) -> None:
     """
-    记录抓取结果
+    Log scraping results
     
     Args:
-        logger: 日志记录器
-        website: 网站名称
-        job_count: 抓取的职位总数
-        new_jobs: 新增职位数
-        errors: 错误数量
+        logger: Logger instance
+        website: Website name
+        job_count: Total number of jobs scraped
+        new_jobs: Number of new jobs
+        errors: Number of errors
     """
-    logger.info(f"抓取结果 - 网站: {website}, 总职位: {job_count}, 新增: {new_jobs}, 错误: {errors}")
+    logger.info(f"Scraping results - Website: {website}, Total jobs: {job_count}, New jobs: {new_jobs}, Errors: {errors}")
 
 
 def log_error_with_context(logger: logging.Logger, error: Exception, 
                           context: str = "", website: str = "") -> None:
     """
-    记录带上下文的错误信息
+    Log error with context information
     
     Args:
-        logger: 日志记录器
-        error: 异常对象
-        context: 错误上下文
-        website: 相关网站
+        logger: Logger instance
+        error: Exception object
+        context: Error context
+        website: Related website
     """
-    error_msg = f"错误: {str(error)}"
+    error_msg = f"Error: {str(error)}"
     if context:
-        error_msg += f" - 上下文: {context}"
+        error_msg += f" - Context: {context}"
     if website:
-        error_msg += f" - 网站: {website}"
+        error_msg += f" - Website: {website}"
     
     logger.error(error_msg, exc_info=True)
