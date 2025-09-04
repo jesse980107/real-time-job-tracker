@@ -1,49 +1,49 @@
-# 自动职位抓取系统
+# Automated Job Scraping System
 
-## 项目简介
-自动化系统，检测和抓取Google Career等招聘网站的新职位发布，并进行本地存储管理。
+## Project Overview
+An automated system that detects and scrapes new job postings from recruitment websites like Google Career, with local storage management.
 
-## 技术栈
-- **网页抓取**: Playwright (Python)
-- **主程序**: Python 3.8+
-- **数据存储**: 本地JSON文件
-- **执行方式**: 串行抓取各个网站
+## Tech Stack
+- **Web Scraping**: Playwright (Python)
+- **Main Program**: Python 3.8+
+- **Data Storage**: Local JSON files
+- **Execution Method**: Sequential scraping of each website
 
-## 项目架构
+## Project Architecture
 
-### 目录结构
+### Directory Structure
 ```
 Real-Time Job Tracker/
-├── README.md              # 项目说明文档
-├── main.py                # 主管理文件 - 程序入口
-├── config.json            # 全局配置 - 高层级管理
-├── requirements.txt       # Python依赖
-├── scrapers/              # 各网站抓取器目录
+├── README.md              # Project documentation
+├── main.py                # Main management file - program entry point
+├── config.json            # Global configuration - high-level management
+├── requirements.txt       # Python dependencies
+├── scrapers/              # Website scraper directory
 │   ├── __init__.py
 │   ├── google_career/
 │   │   ├── scraper.py
-│   │   └── config.json    # Google Career 专用配置
+│   │   └── config.json    # Google Career specific configuration
 │   ├── linkedin/
 │   │   ├── scraper.py
-│   │   └── config.json    # LinkedIn 专用配置
+│   │   └── config.json    # LinkedIn specific configuration
 │   └── indeed/
 │       ├── scraper.py
-│       └── config.json    # Indeed 专用配置
-├── utils/                 # 工具模块
+│       └── config.json    # Indeed specific configuration
+├── utils/                 # Utility modules
 │   ├── __init__.py
-│   ├── file_utils.py      # JSON文件操作
-│   ├── logger.py          # 日志工具
-│   └── deduplication.py   # 去重工具
-├── data/                  # 数据存储目录
-│   ├── jobs.json          # 存储所有job数据
-│   └── last_run.json      # 记录上次运行状态
-└── logs/                  # 日志目录
+│   ├── file_utils.py      # JSON file operations
+│   ├── logger.py          # Logging utilities
+│   └── deduplication.py   # Deduplication utilities
+├── data/                  # Data storage directory
+│   ├── jobs.json          # Stores all job data
+│   └── last_run.json      # Records last run status
+└── logs/                  # Log directory
     └── scraper.log
 ```
 
-### 配置文件分层设计
+### Layered Configuration Design
 
-#### 全局配置 (config.json)
+#### Global Configuration (config.json)
 ```json
 {
   "enabled_websites": ["google_career", "linkedin", "indeed"],
@@ -61,7 +61,7 @@ Real-Time Job Tracker/
 }
 ```
 
-#### 网站专用配置 (scrapers/google_career/config.json)
+#### Website-Specific Configuration (scrapers/google_career/config.json)
 ```json
 {
   "website_info": {
@@ -92,30 +92,30 @@ Real-Time Job Tracker/
 }
 ```
 
-## 工作流程
+## Workflow
 
-1. 运行 `python main.py` 启动系统
-2. 读取全局 `config.json` 获取启用的网站列表
-3. 串行循环遍历每个启用的网站
-4. 为每个网站加载对应的专用配置文件
-5. 调用对应的scraper.py并传入配置
-6. 每个scraper使用Playwright和专用配置抓取职位
-7. 与现有 `jobs.json` 数据比较进行去重
-8. 更新JSON文件和运行状态记录
-9. 记录日志并处理错误
+1. Run `python main.py` to start the system
+2. Read global `config.json` to get list of enabled websites
+3. Sequential loop through each enabled website
+4. Load corresponding website-specific configuration file for each website
+5. Call corresponding scraper.py and pass in configuration
+6. Each scraper uses Playwright and specific configuration to scrape jobs
+7. Compare with existing `jobs.json` data for deduplication
+8. Update JSON files and run status records
+9. Log records and handle errors
 
-## 核心功能
+## Core Features
 
-- **分层配置**: 全局配置管理高层级设置，网站配置管理具体抓取参数
-- **增量更新**: 只抓取新发布的职位，避免重复
-- **去重机制**: 使用job ID或URL作为唯一标识符
-- **错误处理**: 单个网站失败不影响其他网站抓取
-- **日志记录**: 记录抓取过程和结果
-- **灵活配置**: 可单独调整每个网站的抓取策略
+- **Layered Configuration**: Global configuration manages high-level settings, website configuration manages specific scraping parameters
+- **Incremental Updates**: Only scrape newly published jobs, avoid duplication
+- **Deduplication Mechanism**: Use job ID or URL as unique identifier
+- **Error Handling**: Single website failure doesn't affect other website scraping
+- **Logging**: Record scraping process and results
+- **Flexible Configuration**: Can individually adjust scraping strategy for each website
 
-## 数据结构
+## Data Structure
 
-### 职位数据格式 (jobs.json)
+### Job Data Format (jobs.json)
 ```json
 {
   "jobs": [
@@ -139,56 +139,56 @@ Real-Time Job Tracker/
 }
 ```
 
-## 安装和运行
+## Installation and Running
 
-### 1. 安装依赖
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 安装Playwright浏览器
+### 2. Install Playwright Browsers
 ```bash
 playwright install
 ```
 
-### 3. 运行程序
+### 3. Run Program
 ```bash
 python main.py
 ```
 
-## 开发计划
+## Development Plan
 
-### Phase 1: 基础架构
-- [x] 创建项目结构
-- [ ] 实现主程序框架
-- [ ] 创建配置管理系统
-- [ ] 实现日志和工具模块
+### Phase 1: Basic Architecture
+- [x] Create project structure
+- [ ] Implement main program framework
+- [ ] Create configuration management system
+- [ ] Implement logging and utility modules
 
-### Phase 2: 核心功能
-- [ ] 实现Google Career抓取器
-- [ ] 实现数据去重和存储
-- [ ] 添加错误处理和重试机制
+### Phase 2: Core Features
+- [ ] Implement Google Career scraper
+- [ ] Implement data deduplication and storage
+- [ ] Add error handling and retry mechanisms
 
-### Phase 3: 扩展功能
-- [ ] 添加LinkedIn抓取器
-- [ ] 添加Indeed抓取器
-- [ ] 优化性能和稳定性
+### Phase 3: Extended Features
+- [ ] Add LinkedIn scraper
+- [ ] Add Indeed scraper
+- [ ] Optimize performance and stability
 
-## 注意事项
+## Important Notes
 
-1. **反爬虫机制**: 设置合理的请求间隔，使用随机User-Agent
-2. **错误处理**: 网络异常和页面变化的处理
-3. **数据一致性**: 确保数据格式统一和完整性
-4. **性能优化**: 避免重复抓取和内存泄漏
+1. **Anti-scraping Mechanisms**: Set reasonable request intervals, use random User-Agent
+2. **Error Handling**: Handle network exceptions and page changes
+3. **Data Consistency**: Ensure unified data format and integrity
+4. **Performance Optimization**: Avoid duplicate scraping and memory leaks
 
-## 贡献指南
+## Contributing Guidelines
 
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建Pull Request
+1. Fork the project
+2. Create a feature branch
+3. Commit changes
+4. Push to branch
+5. Create Pull Request
 
-## 许可证
+## License
 
 MIT License
