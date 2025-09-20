@@ -123,7 +123,7 @@ class GoogleCareerScraper:
         """
         try:
             page_number = 1
-            max_pages = 5  # Maximum 5 pages to scrape, can be adjusted as needed
+            max_pages = self.website_config.get("scraping_config", {}).get("max_pages", 5)
             
             while page_number <= max_pages:
                 self.logger.info(f"🔍 Starting to scrape page {page_number}")
@@ -412,63 +412,52 @@ class GoogleCareerScraper:
             await self._click_and_scrape_job_card(page, index + 1)
     
     async def _extract_job_data(self, page: Page) -> Optional[Dict[str, Any]]:
-        """
-        Extract job data from detail page
-        
-        Args:
-            page: Playwright page object
-            
-        Returns:
-            Job information dictionary or None
-        """
+        """Extract job data from the detail page."""
         try:
-            # Wait for job card container to load
-            # await page.wait_for_selector('div.DkhPwc', timeout=5000)
-            
-            # Extract jobId (extract 5 or more consecutive digits from URL)
             current_url = page.url
-            job_id_match = re.search(r'\d{5,}', current_url)
-            job_id = job_id_match.group(0) if job_id_match else None
-            
-            # Extract title
+
+            # Google_jobid
+            job_id = self._google_job_id_from_url(current_url)
+
+            # Title
             title_element = await page.query_selector('h2.p1N2lc')
-            title = await title_element.inner_text() if title_element else ""
-            
-            # Extract location
+            title = (await title_element.inner_text()).strip() if title_element else ""
+
+            # Locations
             location_elements = await page.query_selector_all('.r0wTof')
-            locations = []
-            for loc_elem in location_elements:
-                loc_text = await loc_elem.inner_text()
-                locations.append(loc_text.strip())
-            location = '; '.join(locations)
-            
-            # Extract job level
+            locations = [ (await el.inner_text() or "").strip() for el in location_elements ]
+            # remove empties and dupes, keep order
+            seen = set(); loc_list = []
+            for loc in locations:
+                if loc and loc not in seen:
+                    seen.add(loc); loc_list.append(loc)
+            location = '; '.join(loc_list)
+
+            # Level
             level_element = await page.query_selector('.wVSTAb')
-            level = await level_element.inner_text() if level_element else ""
-            
-            # Extract job description
+            level = (await level_element.inner_text()).strip() if level_element else ""
+
+            # Description
             job_description = await self._extract_job_description(page)
-            
-            # Build job data
-            job_data = {
-                'jobId': job_id,
-                'title': title.strip(),
-                'company': 'Google',
-                'location': location,
-                'level': level.strip(),
-                'jobDescription': job_description,
-                'url': current_url,
-                'scraped_date': datetime.now().isoformat(),
-                'source': 'google_career',
-                'status': 'active'
+
+            return {
+                "jobId": job_id,                         # <<< now 'GOOGLE_1234567'
+                "title": title,
+                "company": "Google",
+                "location": location,
+                "level": level,
+                "jobDescription": job_description,
+                "url": current_url,
+                "scraped_date": datetime.now().isoformat(),
+                "source": "google_career",
+                "status": "active",
             }
-            
-            return job_data
-            
+
         except Exception as e:
             self.logger.error(f'❌ Error extracting job data: {e}')
             return None
-    
+
+
     async def _extract_job_description(self, page: Page) -> str:
         """
         Extract job description
@@ -646,6 +635,11 @@ class GoogleCareerScraper:
             self.logger.info(f'📊 Total scraped {len(self.scraped_jobs)} job positions')
         except Exception as e:
             self.logger.error(f'❌ Error saving data: {e}')
+
+    def _google_job_id_from_url(self, url: str) -> str:
+        """Return job id like 'GOOGLE_1234567' (or 'GOOGLE_UNKNOWN' if not found)."""
+        m = re.search(r'(?<!\d)(\d{5,})(?!\d)', url)
+        return f"GOOGLE_{m.group(1)}" if m else "GOOGLE_UNKNOWN"
 
 
 # Test and run functions

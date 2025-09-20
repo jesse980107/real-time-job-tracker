@@ -6,7 +6,7 @@
   },
   "scraping_config": {
     "interval": 3600,
-    "max_pages": 5,
+    "max_pages": 1,
     "selectors": {
       "job_card": "[data-job-id]",
       "title": "h3",

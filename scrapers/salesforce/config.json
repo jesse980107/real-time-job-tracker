@@ -1,0 +1,28 @@
+{
+  "website_info": {
+    "name": "Salesforce Careers",
+    "base_url": "https://careers.salesforce.com/en/jobs/?search=&country=United+States+of+America&country=Canada&pagesize=20#results",
+    "enabled": true
+  },
+  "scraping_config": {
+    "max_pages": 1,             
+    "max_jobs": 2,
+    "sleep_after_nav_ms": 1200,
+    "sleep_after_open_ms": 700
+  },
+  "playwright_options": {
+    "wait_timeout": 35000,
+    "page_load_timeout": 45000,
+
+    "results_container": "#js-job-search-results, .job-listing",
+    "card_selector": ".card.card-job",
+    "card_link_selector": "a.stretched-link.js-view-job",
+
+    "detail_title": "h1.hero-heading, main h1, article h1, h1",
+    "detail_meta_list": "ul.list-unstyled.job-meta li",
+    "detail_time": "time[datetime]",
+    "detail_description": "article.cms-content, article[class*='cms-content']",
+
+    "next_button": "a[rel='next'], nav[aria-label*='pagination'] a[aria-label*='Next']"
+  }
+}

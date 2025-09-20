@@ -1,0 +1,34 @@
+{
+  "website_info": {
+    "name": "Snap Careers",
+    "base_url": "https://careers.snap.com/jobs",
+    "enabled": true
+  },
+  "scraping_config": {
+    "max_pages": 1,
+    "max_jobs": 4,
+    "us_ca_only": true,
+    "sleep_after_nav_ms": 1200,
+    "sleep_after_open_ms": 700,
+    "scroll_passes": 10,
+
+    "us_cities": ["Austin","Bellevue","Chicago","Los Angeles","New York","Palo Alto","San Diego","San Francisco","Santa Monica","Seattle","Washington"],
+    "ca_cities": ["Toronto"]
+  },
+  "playwright_options": {
+    "wait_timeout": 45000,
+    "page_load_timeout": 60000,
+
+    "results_section": "section[data-testid='mwp-jobs-table'], .css-ue0ow9[role='table']",
+    "job_row_link": "a.sdsm-hyperlink[href*='/job?id=R']",
+
+    "location_toggle": "button[aria-haspopup='listbox'][data-testid='location'], button[aria-haspopup='listbox']:has-text('All locations')",
+    "location_listbox": "div[role='listbox'].sdsm-dropdown",
+    "location_option": "div[role='listbox'] button.sdsm-dropdown-item",
+
+    "detail_title": "main h1, article h1, h1",
+    "detail_locations_block": "article section p",
+    "detail_posted_text": "article section:has(span:has-text('Posted')) span",
+    "detail_description": "article[data-testid='content-body']"
+  }
+}
