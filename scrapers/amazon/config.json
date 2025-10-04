@@ -1,0 +1,26 @@
+{
+    "website_info": {
+        "name": "Amazon Careers",
+        "base_url": "https://www.amazon.jobs/en/search",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 15,
+        "sleep_after_nav_ms": 1000,
+        "sleep_after_open_ms": 300,
+        "apply_filters_via_ui": false,
+        "result_limit": 10,
+        "locations": [
+            "USA",
+            "CAN"
+        ]
+    },
+    "playwright_options": {
+        "results_link_selector": "a.job-link, a[href*='/en/jobs/']",
+        "show_more_button": "button.btn_circle_right, button[aria-label*='Next page']",
+        "detail_title": "h1.title, h1",
+        "detail_description": "div.section, div.content, div#job-detail-body",
+        "job_card_selector": "div.row, div[class*='job']",
+        "see_details_button": "a.job-link, a[href*='/en/jobs/']"
+    }
+}

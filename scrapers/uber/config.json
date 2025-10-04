@@ -1,0 +1,35 @@
+{
+    "website_info": {
+        "name": "Uber Careers",
+        "base_url": "https://www.uber.com/us/en/careers/list/?query=",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 3,
+        "sleep_after_nav_ms": 900,
+        "sleep_after_open_ms": 500,
+        "apply_filters_via_ui": false,
+        "locations": [
+            "Toronto, Canada",
+            "San Francisco, California",
+            "Sunnyvale, California",
+            "Culver City, California",
+            "Los Angeles, California",
+            "New York, New York",
+            "Chicago, Illinois",
+            "Seattle, Washington",
+            "Dallas, Texas",
+            "Phoenix, Arizona",
+            "Miami, Florida",
+            "Washington, District of Columbia",
+            "Boston, Massachusetts"
+        ]
+    },
+    "playwright_options": {
+        "results_link_selector": "a[href^='/careers/list/']",
+        "show_more_button": "button:has-text('Show more openings')",
+        "detail_title": "main h1, h1",
+        "detail_description": "article, main article, main .css-cvJeNJ, main [data-test*='description']",
+        "locations_filter_label": "Locations"
+    }
+}

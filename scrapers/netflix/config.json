@@ -1,0 +1,14 @@
+{
+  "website_info": {
+    "name": "Netflix",
+    "base_url": "https://explore.jobs.netflix.net/careers",
+    "enabled": true
+  },
+  "scraping_config": {
+    "max_jobs": 2,
+    "scroll_passes": 40
+  },
+  "filters": {
+    "us_ca_only": true
+  }
+}

@@ -1,11 +1,12 @@
 {
   "enabled_websites": [
-    "salesforce"
+    "snap"
   ],
   "global_settings": {
     "headless": false,
     "log_level": "DEBUG",
-    "global_delay": 2
+    "global_delay": 2,
+    "output_file": "data/jobs.json"
   },
   "playwright_global": {
     "timeout": 30000,

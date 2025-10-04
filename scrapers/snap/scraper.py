@@ -76,6 +76,7 @@ class SnapScraper:
 
     # -------- entry --------
     async def scrape_jobs(self) -> List[Dict[str, Any]]:
+        start_time = datetime.now()
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -117,10 +118,18 @@ class SnapScraper:
                 await context.close()
                 await browser.close()
 
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.info(f"Snap scraping finished. Total jobs: {len(self.scraped)}")
             return self.scraped
 
         except Exception as e:
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.error(f"Snap scraping error: {e}")
             return self.scraped
 
@@ -424,6 +433,7 @@ class SnapScraper:
             pass
 
     async def scrape_jobs(self) -> List[Dict[str, Any]]:
+        start_time = datetime.now()
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -482,10 +492,18 @@ class SnapScraper:
                 await context.close()
                 await browser.close()
 
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.info(f"Snap scraping finished. Total jobs: {len(self.scraped)}")
             return self.scraped
 
         except Exception as e:
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.error(f"Snap scraping error: {e}")
             return self.scraped
 
@@ -554,4 +572,3 @@ class SnapScraper:
         except:
             pass
         return None
-

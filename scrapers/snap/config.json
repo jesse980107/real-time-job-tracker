@@ -6,7 +6,7 @@
   },
   "scraping_config": {
     "max_pages": 1,
-    "max_jobs": 4,
+    "max_jobs": 3,
     "us_ca_only": true,
     "sleep_after_nav_ms": 1200,
     "sleep_after_open_ms": 700,

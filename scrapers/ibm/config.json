@@ -1,0 +1,36 @@
+{
+  "website_info": {
+    "name": "IBM Careers",
+    "base_url": "https://www.ibm.com/careers/search?field_keyword_05[0]=United%20States&field_keyword_05[1]=Canada&sort=dcdate_desc",
+    "enabled": true
+  },
+  "scraping_config": {
+    "max_pages": 1,
+    "max_jobs": 3,
+    "us_ca_only": true,
+    "sleep_after_nav_ms": 1200,
+    "sleep_after_open_ms": 700,
+    "detail_timeout_ms": 45000
+  },
+  "playwright_options": {
+    "results_selector": "main, [data-autoid*='card-group'], .bx--card-group__cards__row--condensed",
+    "job_link_selector": "a[href*='ibmglobal.avature.net'][href*='JobDetail']",
+    "next_page_selector": "a[aria-label='Next'], a[aria-label*='Next']",
+    "detail_title": "main h1, main h2, header h1, header h2, h1, h2",
+    "detail_location": ".card-item-location, [class*='card-item-location']",
+    "detail_department": ".card-item-department, [class*='card-item-department']",
+    "detail_type": ".card-item-type, [class*='card-item-type']",
+    "detail_right_panel": "article.article, .article, .article--details",
+    "detail_description": "article.article, main article, .section_content article, .article_content",
+    "cookie_accept_selectors": [
+      "#onetrust-accept-btn-handler",
+      "button:has-text('Accept all')",
+      "button:has-text('Accept')"
+    ],
+    "detail_ready_selectors": [
+      ".card-item.card-item-location",
+      ".article__header__text_subtitle",
+      "article.article"
+    ]
+  }
+}

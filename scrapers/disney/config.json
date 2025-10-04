@@ -1,0 +1,29 @@
+{
+    "website_info": {
+        "name": "Disney Careers",
+        "base_url": "https://www.disneycareers.com/en/search-jobs",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 5,
+        "sleep_after_nav_ms": 1000,
+        "sleep_after_open_ms": 500,
+        "apply_filters_via_ui": false,
+        "locations": [
+            "United States",
+            "Canada"
+        ]
+    },
+    "playwright_options": {
+        "results_link_selector": "a[href*='/job/']",
+        "show_more_button": ".next[href], button:has-text('Next'), [aria-label*='next' i]",
+        "detail_title": "h1",
+        "detail_description": ".ats-description_content, .job-description, [data-automation-id='jobDescription']",
+        "job_card_selector": "li, .job-item, [data-job-id]",
+        "see_details_button": "a[href*='/job/']",
+        "pagination_button": ".pagination-page, .next[href], .prev[href]",
+        "job_id_selector": ".job-id, [data-job-id]",
+        "job_location_selector": ".job-location, [data-job-location]",
+        "job_business_selector": ".job-brand, [data-job-business]"
+    }
+}

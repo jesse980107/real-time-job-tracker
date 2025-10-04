@@ -48,6 +48,7 @@ class GoogleCareerScraper:
         Returns:
             List of scraped job positions
         """
+        start_time = datetime.now()
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -65,6 +66,10 @@ class GoogleCareerScraper:
                 
                 await browser.close()
                 
+                end_time = datetime.now()
+                duration = (end_time - start_time).total_seconds()
+                self.scraping_duration = duration
+                self.logger.info(f"Scraping duration: {duration:.2f} seconds")
                 self.logger.info(f"Google Career scraping completed, obtained {len(self.scraped_jobs)} job positions")
                 return self.scraped_jobs
                 

@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import logging
 import re
 from datetime import datetime
@@ -14,13 +13,6 @@ def now_iso() -> str:
 
 
 class DoordashScraper:
-    """
-    Scrapes DoorDash Careers for two countries (United States, Canada).
-    - Applies filter via URL (keyword blank, intern=0, location=<country>).
-    - Paginates by spage=1..N.
-    - Opens EACH job in a new tab and extracts details.
-    Output schema matches your other scrapers.
-    """
 
     def __init__(self, website_config: Dict[str, Any], global_config: Dict[str, Any]):
         self.cfg = website_config
@@ -31,7 +23,6 @@ class DoordashScraper:
         self.sel_results = wp.get("results_container", "div#postings, .holder--showing")
         self.sel_card = wp.get("card_selector", "div.job-item")
         self.sel_card_link = wp.get("card_link_selector", ".title-container a[href*='/jobs/']")
-        self.sel_next = wp.get("next_button", "a[aria-label*='Next']")
 
         self.sel_detail_title = wp.get("detail_title", "h1")
         self.sel_detail_jobid = wp.get("detail_jobid", "p:has-text('Job ID:')")
@@ -55,8 +46,8 @@ class DoordashScraper:
         self.scraped: List[Dict[str, Any]] = []
         self.seen_urls: Set[str] = set()
 
-    # --------------- entry ---------------
     async def scrape_jobs(self) -> List[Dict[str, Any]]:
+        start_time = datetime.now()
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -73,6 +64,10 @@ class DoordashScraper:
                 await context.close()
                 await browser.close()
 
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.info(f"DoorDash scraping finished. Total jobs collected: {len(self.scraped)}")
             return self.scraped
 
@@ -80,7 +75,6 @@ class DoordashScraper:
             self.logger.error(f"DoorDash scraping error: {e}")
             return self.scraped
 
-    # --------------- per-country flow ---------------
     async def _scrape_country(self, page: Page, country: str) -> None:
         total_for_country = 0
         page_idx = 1
@@ -90,7 +84,6 @@ class DoordashScraper:
             self.logger.info(f"[{country}] Opening results page {page_idx}: {url}")
             await page.goto(url)
             await page.wait_for_load_state("domcontentloaded")
-            # Wait for either results container or at least one card link to appear
             try:
                 await page.wait_for_selector(self.sel_results, timeout=self.timeout)
             except:
@@ -98,17 +91,14 @@ class DoordashScraper:
             await page.wait_for_timeout(self.sleep_after_nav_ms)
             await self._progressive_scroll(page)
 
-            # Prefer card wrapper; fall back to scanning links directly
             cards = page.locator(self.sel_card)
             card_count = await cards.count()
             if card_count == 0:
-                # Some pages render items without the wrapper class; fallback to link scan
                 links = page.locator(self.sel_card_link)
                 if await links.count() == 0:
                     self.logger.info(f"[{country}] No jobs found on page {page_idx}. Stopping.")
                     break
 
-            # Snapshot: (href, dept, func) for each card
             snapshot: List[tuple[str, Optional[str], Optional[str]]] = []
             if card_count > 0:
                 for i in range(card_count):
@@ -121,10 +111,6 @@ class DoordashScraper:
                         continue
                     abs_url = self._absolute(page, href)
 
-                    # Pull Department & Function from the card (right-hand columns)
-                    # DOM (from your screenshots):
-                    #   div.department-container .value-secondary
-                    #   div.function-container  .value-secondary
                     dept = None
                     func = None
                     try:
@@ -142,7 +128,6 @@ class DoordashScraper:
 
                     snapshot.append((abs_url, dept, func))
             else:
-                # Link-only fallback
                 links = page.locator(self.sel_card_link)
                 link_count = await links.count()
                 for i in range(link_count):
@@ -153,7 +138,6 @@ class DoordashScraper:
 
             self.logger.info(f"[{country}] Prepared {len(snapshot)} job links on page {page_idx}")
 
-            # Process each detail page
             for abs_url, dept, func in snapshot:
                 if total_for_country >= self.max_jobs_per_country:
                     break
@@ -168,18 +152,15 @@ class DoordashScraper:
                     total_for_country += 1
                     self.logger.info(f"✔ [{country}] {total_for_country} :: {job['title']} ({job.get('location','')})")
 
-            # Next page
             page_idx += 1
 
-
-    # --------------- detail parsing ---------------
     async def _parse_detail_in_new_tab(
-    self,
-    listing_page: Page,
-    url: str,
-    country: str,
-    dept_hint: Optional[str] = None,
-    func_hint: Optional[str] = None
+        self,
+        listing_page: Page,
+        url: str,
+        country: str,
+        dept_hint: Optional[str] = None,
+        func_hint: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         ctx = listing_page.context
         p = await ctx.new_page()
@@ -189,13 +170,10 @@ class DoordashScraper:
 
             title = await self._get_text(p, self.sel_detail_title) or self._title_from_url(url) or "Untitled"
 
-            # Company (best-effort)
             company = await self._get_first_that_exists_text(p, [self.sel_detail_company]) or "DoorDash, Inc."
 
-            # Job ID (from explicit text or URL)
             job_id = await self._extract_job_id(p) or self._job_id_from_url(url)
 
-            # -------- Robust LOCATION extraction --------
             loc_text = await self._get_text(p, self.sel_detail_loc_block) or ""
             locations = self._normalize_locations(loc_text)
 
@@ -220,10 +198,8 @@ class DoordashScraper:
 
             location = ", ".join(locations)
 
-            # Description
             description = await self._get_text(p, self.sel_detail_desc) or ""
 
-            # Department / Function
             department = dept_hint
             function = func_hint
             if not department:
@@ -260,8 +236,6 @@ class DoordashScraper:
         finally:
             await p.close()
 
-
-    # --------------- helpers ---------------
     async def _progressive_scroll(self, page: Page) -> None:
         try:
             for _ in range(8):
@@ -279,10 +253,6 @@ class DoordashScraper:
         return f"{u.scheme}://{u.netloc}{href}"
 
     def _build_search_url(self, country: str, spage: int) -> str:
-        """
-        Builds URL like:
-        https://careersatdoordash.com/job-search/?intern=0&keyword=&location=canada&spage=1
-        """
         parsed = urlparse(self.base_url)
         q = dict(parse_qsl(parsed.query))
         q["intern"] = "0"
@@ -310,17 +280,11 @@ class DoordashScraper:
         return None
 
     def _normalize_locations(self, text: str) -> List[str]:
-        """
-        DoorDash location blocks look like:
-        'Phoenix, AZ; Seattle, WA; Los Angeles, CA; ...; United States - Remote'
-        We split on ';' and '•', trim, and keep order.
-        """
         out: List[str] = []
         for part in re.split(r"[;•]+", text or ""):
             val = re.sub(r"\s+", " ", (part or "").strip())
             if val:
                 out.append(val)
-        # de-dupe preserving order
         seen = set()
         uniq = []
         for x in out:
@@ -330,7 +294,7 @@ class DoordashScraper:
         return uniq
 
     def _title_from_url(self, url: str) -> Optional[str]:
-        slug = urlparse(url).path.rstrip("/").split("/")[-2:]  # [..., <title-slug>, <numeric-id>]
+        slug = urlparse(url).path.rstrip("/").split("/")[-2:]
         if not slug:
             return None
         title_slug = slug[0]
@@ -352,7 +316,6 @@ class DoordashScraper:
         return None
 
     def _job_id_from_url(self, url: str) -> str:
-        # /jobs/sr-associate-drive---growth-strategy-and-operations/7239009/
         m = re.search(r"/jobs/[^/]+/(\d+)/?", url)
         if m:
             return f"DOORDASH_{m.group(1)}"

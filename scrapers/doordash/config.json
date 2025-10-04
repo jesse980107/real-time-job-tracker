@@ -7,24 +7,18 @@
   "scraping_config": {
     "countries": ["United states", "canada"],
     "max_pages": 1,
-    "max_jobs_per_country": 2,
+    "max_jobs_per_country": 3,
     "sleep_after_nav_ms": 1200,
     "sleep_after_open_ms": 700
   },
   "playwright_options": {
-    "wait_timeout": 35000,
-    "page_load_timeout": 45000,
-
     "results_container": "div#postings, .holder--showing",
     "card_selector": "div.job-item",
     "card_link_selector": ".title-container a[href*='/jobs/']",
-
     "detail_title": "h1, header h1",
     "detail_jobid": "p:has-text('Job ID:')",
     "detail_company": "p:has-text('DoorDash')",
     "detail_location_block": ".location-container .value-secondary, .text-white:has-text('Job ID:') + p", 
-    "detail_description": "section#content, .content, article, main",
-
-    "next_button": "a[aria-label*='Next'], nav[aria-label*='pagination'] a[aria-label*='Next']"
+    "detail_description": "section#content, .content, article, main"
   }
 }

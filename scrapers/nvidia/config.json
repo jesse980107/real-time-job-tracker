@@ -1,0 +1,22 @@
+{
+  "website_info": {
+  "name": "NVIDIA Workday",
+  "base_url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite",
+  "enabled": true
+  },
+  "scraping_config": {
+    "max_pages": 1,
+    "max_jobs": 2,
+    "us_ca_only": true,
+    "sleep_after_nav_ms": 1200,
+    "sleep_after_open_ms": 800
+  },
+  "playwright_options": {
+    "wait_timeout": 30000,
+    "page_load_timeout": 45000,
+    "results_selector": "[data-automation-id='jobResults']",
+    "job_card_selector": "[data-automation-id='jobCard']",
+    "job_link_selector": "[data-automation-id='jobTitle'] a",
+    "next_page_selector": "button[aria-label*='Next'], [data-automation-id='nextPageButton']"
+  }
+}

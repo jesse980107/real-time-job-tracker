@@ -10,9 +10,7 @@
     "sleep_after_open_ms": 700,
 
     "locations": [
-      "Boston, MA",
       "Charlotte, NC",
-      "Chesapeake, VA",
       "New York, NY",
       "San Francisco, CA",
       "Seattle, WA",
@@ -24,12 +22,8 @@
     ]
   },
   "playwright_options": {
-    "wait_timeout": 35000,
-    "page_load_timeout": 45000,
-
     "results_container": "[data-testid='core-ui-layout-container']",
     "card_anchor_selector": "a[target='_blank'][href*='app.careerpuck.com/job-board/lyft/job']",
-
     "detail_title": "h1:has-text(','), h1",
     "detail_location": "[data-testing*='Location'] h3, [class*='Location'] h3, [data-testing*='Location']",
     "detail_req_id": "[data-testing*='Requisition'] div, [class*='Requisition'] div",

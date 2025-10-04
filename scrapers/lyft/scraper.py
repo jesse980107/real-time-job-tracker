@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import html
 import logging
 import json
@@ -7,25 +6,20 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urlencode, quote, urlparse, urljoin, parse_qs
-import html as _html
-from numpy import select
+
 from playwright.async_api import async_playwright, Page, TimeoutError as PlaywrightTimeoutError
+
 REQ_RE = re.compile(r"\bID\s*[:\-]?\s*(\d{5,7})\b", re.I)
 REQ_JSON_RE = re.compile(r'"(req(?:uisition)?(?:_?id)?)"\s*:\s*"?(?P<num>\d{5,7})"?', re.I)
 
-# If you prefer timezone-consistent stamps, swap to your TimeUtil:
-# from utils.timeUtil import get_current_timestamp_in_timezone
-# def now_iso() -> str: return get_current_timestamp_in_timezone("UTC")
 def now_iso() -> str:
     return datetime.now().isoformat()
 
+def _stable_md5(text: str) -> str:
+    import hashlib
+    return hashlib.md5(text.encode('utf-8')).hexdigest()
+
 class LyftScraper:
-    """
-    Scrapes Lyft openings for a fixed allowlist of US & Canada locations.
-    For each location, navigates directly via querystring (?location=...) to
-    the listings page, snapshots job links, opens each job in a new tab, and
-    yields normalized job objects compatible with your pipeline.
-    """
 
     def __init__(self, website_config: Dict[str, Any], global_config: Dict[str, Any]):
         self.cfg = website_config
@@ -61,8 +55,8 @@ class LyftScraper:
         self.detail_timeout = max(self.timeout, 60000)
         self.detail_retries = 2
 
-    # ---------------- public entry ----------------
     async def scrape_jobs(self) -> List[Dict[str, Any]]:
+        start_time = datetime.now()
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -74,23 +68,20 @@ class LyftScraper:
                 page.set_default_timeout(self.timeout)
 
                 total = 0
-                # iterate the approved locations
                 for human_loc in self.locations:
                     if total >= self.max_jobs: break
                     ok = await self._open_listing_for_location(page, human_loc)
                     if not ok:
                         continue
 
-                    # snapshot job links on this listing view
                     hrefs = await self._snapshot_job_hrefs(page)
                     self.logger.info(f"[{human_loc}] found {len(hrefs)} jobs")
 
-                    # open each job in a NEW TAB (detail page is on careerpuck)
                     for href in hrefs:
                         if total >= self.max_jobs: break
-                        if href in self.seen_urls:  # location views may overlap
+                        if href in self.seen_urls:
                             continue
-                        job = await self._parse_detail_in_new_tab(page, href, location_hint=human_loc)  # <— pass hint
+                        job = await self._parse_detail_in_new_tab(page, href, location_hint=human_loc)
                         await page.wait_for_timeout(self.sleep_after_open_ms)
                         if job:
                             self.scraped.append(job)
@@ -101,6 +92,10 @@ class LyftScraper:
                 await context.close()
                 await browser.close()
 
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.info(f"Lyft scraping finished. Total jobs collected: {len(self.scraped)}")
             return self.scraped
 
@@ -108,12 +103,7 @@ class LyftScraper:
             self.logger.error(f"Lyft scraping error: {e}")
             return self.scraped
 
-    # ---------------- listing navigation ----------------
     async def _open_listing_for_location(self, page: Page, human_location: str) -> bool:
-        """
-        Open the openings page, apply the location filter (native <select> or custom combobox),
-        expand all sections, and confirm at least one job link is visible.
-        """
         try:
             self.logger.info(f"Opening: {self.base_url}")
             await page.goto(self.base_url)
@@ -121,7 +111,6 @@ class LyftScraper:
             await page.wait_for_selector(self.sel_results, timeout=self.timeout)
             await page.wait_for_timeout(self.sleep_after_nav_ms)
 
-            # --- PATH A: native <select aria-label="All locations"> ---
             try:
                 select = page.locator("select[aria-label*='All location' i]").first
                 if await select.count():
@@ -157,12 +146,8 @@ class LyftScraper:
                     await page.wait_for_timeout(self.sleep_after_nav_ms)
 
                 else:
-                    # --- PATH B: custom combobox (avoid language picker) ---
                     self.logger.info(f"Selecting location via custom combobox: {human_location}")
-                    # The location control sits in the "Filter by:" toolbar; prefer the one near 'All locations'
-                    # Avoid any combobox whose aria-label mentions Language.
                     cb = page.locator("div[role='combobox']:not([aria-label*='Language' i])")
-                    # If multiple, prefer the one following the 'All locations' label
                     if await page.get_by_text("All locations", exact=False).count():
                         after_label = page.get_by_text("All locations", exact=False).first.locator(
                             "xpath=following::div[@role='combobox'][1]"
@@ -174,19 +159,16 @@ class LyftScraper:
                         raise PlaywrightTimeoutError("Location combobox not found")
 
                     await cb.first.click()
-                    # The popup listbox shows options as <li role="option">Boston, MA</li>, etc.
-                    # Type to filter (some builds support type-ahead on the focused combobox).
                     try:
                         await cb.first.type(human_location, delay=40)
                     except Exception:
-                        pass  # typing not always supported; still click the option below
+                        pass
 
                     options = page.locator("ul[role='listbox'] li[role='option']")
-                    # Prefer exact match first; fall back to contains(city)
-                    if await options.filter(f"text='{human_location}'").count():
-                        await options.filter(f"text='{human_location}'").first.click()
+                    if await options.filter(has_text=human_location).count():
+                        await options.filter(has_text=human_location).first.click()
                     else:
-                        await options.filter(f"has-text='{human_location.split(',')[0]}'").first.click()
+                        await options.filter(has_text=human_location.split(',')[0]).first.click()
 
                     await page.wait_for_load_state("networkidle")
                     await page.wait_for_timeout(self.sleep_after_nav_ms)
@@ -198,14 +180,11 @@ class LyftScraper:
                 self.logger.warning(f"Filter interaction failed: {e}")
                 return False
 
-            # Expand all accordion sections so job links render
             await self._expand_all_sections(page)
 
-            # Sanity: should see at least one careerpuck link
             if await page.locator(self.sel_card_anchor).count() > 0:
                 return True
 
-            # One more pass in case of virtualized content
             await self._progressive_scroll(page)
             await self._expand_all_sections(page)
             return (await page.locator(self.sel_card_anchor).count()) > 0
@@ -242,20 +221,16 @@ class LyftScraper:
                 seen.add(u); out.append(u)
         return out
 
-    # ---------------- detail parsing ----------------
     async def _parse_detail_in_new_tab(self, listing_page: Page, url: str, location_hint: str = "") -> Optional[Dict[str, Any]]:
-    # 0) Prefer Greenhouse API path
         gh_jid = self._gh_job_id_from_url(url)
         if gh_jid:
             api_rec = await self._fetch_greenhouse_job(listing_page, gh_jid)
             if api_rec:
                 if not api_rec.get("location") and location_hint:
                     api_rec["location"] = location_hint
-                    api_rec["id"] = self._stable_md5(f"Lyft|{api_rec['title']}|{api_rec['location']}|{api_rec['url']}")
+                    api_rec["id"] = _stable_md5(f"Lyft|{api_rec['title']}|{api_rec['location']}|{api_rec['url']}")
                 return api_rec
 
-
-        # 1) Fallback to browser-based detail parsing (your existing robust flow)
         ctx = listing_page.context
         for attempt in range(self.detail_retries + 1):
             p = await ctx.new_page()
@@ -263,7 +238,6 @@ class LyftScraper:
                 p.set_default_timeout(self.detail_timeout)
                 await p.goto(url, wait_until="domcontentloaded", timeout=self.detail_timeout)
 
-                # best-effort cookie dismissals
                 for sel in (
                     "#onetrust-accept-btn-handler",
                     "button#onetrust-accept-btn-handler",
@@ -298,7 +272,7 @@ class LyftScraper:
                     "posted_date": posted_date,
                     "source": "lyft",
                     "status": "active",
-                    "id": self._stable_md5(f"Lyft|{title}|{location}|{url}"),
+                    "id": _stable_md5(f"Lyft|{title}|{location}|{url}"),
                     "scraped_date": now_iso(),
                 }
 
@@ -348,18 +322,11 @@ class LyftScraper:
         return None
 
     async def _extract_req_id(self, page: Page) -> Optional[str]:
-        """
-        On the detail page, a small block shows:
-           ID: 110182
-        We grab the first 4–8 digit token following 'ID'.
-        """
-        # Try structured slot first
         txt = await self._get_text(page, self.sel_detail_req_id)
         if txt:
             m = re.search("\\bID\\s*:\\s*(\\d{4,10})\\b", txt, re.I)
             if m: return m.group(1)
 
-        # Fallback: scan the header area
         header_txt = await self._get_text(page, "[class*='HeaderSubtitle'], [class*='HeaderContainer'], header, .header")
         if header_txt:
             m = re.search("\\bID\\s*:\\s*(\\d{4,10})\\b", header_txt, re.I)
@@ -367,11 +334,6 @@ class LyftScraper:
         return None
 
     async def _extract_location(self, page: Page) -> Optional[str]:
-        """
-        Careerpuck typically shows a clean location line (e.g., 'Boston, MA') under the title.
-        Try several robust selectors & fallbacks.
-        """
-        # 1) Common header blocks containing 'Location'
         for sel in [
             self.sel_detail_location,
             "[data-testing*='Location'] h3, [data-testing*='Location']",
@@ -382,12 +344,10 @@ class LyftScraper:
             if txt and re.search(r",\s*[A-Za-z]{2}\b|Canada", txt):
                 return re.sub(r"\s+", " ", re.sub(r"^Location\s*:\s*", "", txt, flags=re.I)).strip()
 
-        # 2) A nearby sibling under h1 (varies by build)
         txt = await self._get_text(page, "h1 + div, h1 + p, h1 ~ p")
         if txt and re.search(r",\s*[A-Za-z]{2}\b|Canada", txt):
             return re.sub(r"\s+", " ", txt).strip()
 
-        # 3) As a last resort, mine the body for a standalone 'City, ST' or 'City, Canada'
         body = await self._get_text(page, "main, article, body")
         if body:
             m = re.search(r"\b([A-Za-z][A-Za-z .'-]+),\s*([A-Z]{2}|Canada)\b", body)
@@ -396,9 +356,7 @@ class LyftScraper:
 
         return None
 
-    # ---------------- helpers ----------------
     def _slug_token(self, url: str) -> str:
-        # last numeric token in the URL path or gh_jid param
         p = urlparse(url)
         path_last = p.path.rstrip("/").split("/")[-1]
         m = re.search(r"(\d{6,12})", path_last)
@@ -414,7 +372,6 @@ class LyftScraper:
         return re.sub("\\s+", " ", t).strip().title()
 
     async def _expand_all_sections(self, page: Page) -> None:
-        """Click all collapsed accordion toggles so job cards become visible."""
         try:
             toggles = page.locator("button[aria-controls][aria-expanded='false']")
             count = await toggles.count()
@@ -434,7 +391,6 @@ class LyftScraper:
         q = parse_qs(urlparse(url).query or "")
         if "gh_jid" in q and len(q["gh_jid"]) > 0:
             return q["gh_jid"][0]
-        # fallback: last numeric in path (often matches gh_jid too)
         m = re.search(r"(\d{6,12})", urlparse(url).path)
         return m.group(1) if m else ""
 
@@ -461,10 +417,8 @@ class LyftScraper:
                 posted_date = m.group(1)
 
             absolute = (payload.get("absolute_url") or "").strip()
-            # ---------- Resolve human-facing requisition ID ----------
             req_id = ""
 
-            # (A) Rare payload/metadata hints
             for key in ("internal_job_id", "requisition_id"):
                 v = str(payload.get(key) or "").strip()
                 if v.isdigit() and 5 <= len(v) <= 7:
@@ -479,23 +433,20 @@ class LyftScraper:
                         req_id = val
                         break
 
-            # (B) Always check CareerPuck (HTML/JSON/DOM) – most reliable
             if not req_id:
                 cp_url = (payload.get("absolute_url") or "").strip()
                 if not cp_url:
                     cp_url = f"https://app.careerpuck.com/job-board/lyft/job/{gh_jid}?gh_jid={gh_jid}"
                 req_id = await self._fetch_req_id_via_http(page, cp_url)
 
-            # (C) Guard: never accept 9–12 digit ids (those are Greenhouse ids)
             if req_id and not (5 <= len(req_id) <= 7):
                 req_id = ""
 
-            # (D) Last resort (keeps record unique but less pretty)
             if not req_id:
                 req_id = str(gh_jid)
 
             record = {
-                "jobId": f"LYFT_{req_id}",   # ← always the UI requisition
+                "jobId": f"LYFT_{req_id}",
                 "gh_jid": str(gh_jid),
                 "title": title,
                 "company": "Lyft",
@@ -534,35 +485,24 @@ class LyftScraper:
 
     
     async def _fetch_req_id_via_http(self, page: Page, url: str) -> str:
-        """
-        Try hard to extract the candidate-facing requisition id (5–7 digits) from
-        the CareerPuck page: plain text, then embedded JSON; if not found, do a
-        quick DOM navigation in a temporary page to read rendered text.
-        """
         try:
-            # ---- pass 1: raw HTML request (cheap) ----
             resp = await page.request.get(url, timeout=30000)
             if resp.ok:
                 raw = await resp.text()
-                txt = _html.unescape(raw)
-                # 1a) plain text (strip tags)
+                txt = html.unescape(raw)
                 plain = re.sub(r"<[^>]+>", " ", txt)
                 plain = re.sub(r"\s+", " ", plain).strip()
                 m = REQ_RE.search(plain)
                 if m:
                     return m.group(1)
-                # 1b) embedded JSON: requisitionId / internal_job_id / reqId, etc.
                 m = REQ_JSON_RE.search(txt)
                 if m:
                     return m.group("num")
-            # ---- pass 2: tiny DOM visit (fast) ----
-            # Sometimes CareerPuck hydrates client-side.
             ctx = page.context
             tmp = await ctx.new_page()
             try:
                 tmp.set_default_timeout(8000)
                 await tmp.goto(url)
-                # look for any element that contains "ID:"
                 body_text = (await tmp.locator("body").inner_text()).strip()
                 m = REQ_RE.search(body_text)
                 if m:
@@ -574,7 +514,6 @@ class LyftScraper:
         return ""
         
     async def _select_location_via_combobox_contains(self, page: Page, human_location: str) -> None:
-        """Opens the custom combobox and clicks the first option that CONTAINS the city text."""
         city_only = human_location.split(",")[0].strip()
         cb = page.locator("div[role='combobox']:not([aria-label*='Language' i])")
         if await page.get_by_text("All locations", exact=False).count():
@@ -593,57 +532,13 @@ class LyftScraper:
             pass
 
         options = page.locator("ul[role='listbox'] li[role='option']")
-        # prefer exact first, else contains city name (handles 'Longueuil, Canada; Montreal, Canada')
-        if await options.filter(f"text='{human_location}'").count():
-            await options.filter(f"text='{human_location}'").first.click()
+        if await options.filter(has_text=human_location).count():
+            await options.filter(has_text=human_location).first.click()
         else:
-            await options.filter(f"has-text='{city_only}'").first.click()
+            await options.filter(has_text=city_only).first.click()
 
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(self.sleep_after_nav_ms)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

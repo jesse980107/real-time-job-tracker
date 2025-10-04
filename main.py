@@ -56,7 +56,7 @@ class JobTracker:
             self.logger.error(f"Website configuration file format error: {e}")
             return {}
 
-    def _save_site_snapshot(self, website_name: str, jobs: List[Dict[str, Any]]) -> None:
+    def _save_site_snapshot(self, website_name: str, jobs: List[Dict[str, Any]], scraper=None) -> None:
         """
         Save a per-site snapshot (e.g., data/wbdjobs.json).
         If you add a mapping in config.global_settings.site_output_map, that name is used.
@@ -73,12 +73,18 @@ class JobTracker:
             default_path = f"data/{website_name}jobs.json"
             out_path = site_map.get(website_name, default_path)
 
+            metadata = {
+                "total_jobs": len(jobs),
+                "last_updated": datetime.now().isoformat(),
+            }
+            
+            # Add scraping duration if available
+            if scraper and hasattr(scraper, 'scraping_duration'):
+                metadata["scraping_duration_seconds"] = scraper.scraping_duration
+
             payload = {
                 "jobs": jobs,
-                "metadata": {
-                    "total_jobs": len(jobs),
-                    "last_updated": datetime.now().isoformat(),
-                },
+                "metadata": metadata,
             }
             save_json(out_path, payload)
             self.logger.info(
@@ -115,7 +121,7 @@ class JobTracker:
             self.logger.info(f"Scraped {len(jobs)} jobs from {website_name}")
 
             # Write site-specific snapshot (e.g., data/wbdjobs.json)
-            self._save_site_snapshot(website_name, jobs)
+            self._save_site_snapshot(website_name, jobs, scraper)
 
             return jobs
 

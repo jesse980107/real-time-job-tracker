@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import logging
 import re
 from datetime import datetime
@@ -8,9 +7,6 @@ from urllib.parse import urlparse, urljoin
 
 from playwright.async_api import async_playwright, Page, TimeoutError as PlaywrightTimeoutError
 
-# If you want strict timezone-consistent timestamps, swap to your time util:
-# from utils.timeUtil import get_current_timestamp_in_timezone
-# def now_iso(): return get_current_timestamp_in_timezone("UTC")
 def now_iso() -> str:
     return datetime.now().isoformat()
 
@@ -51,15 +47,11 @@ class SalesforceScraper:
         self.base_url = self.cfg["website_info"]["base_url"]
         self.scraped: List[Dict[str, Any]] = []
         self.seen_urls: Set[str] = set()
-        # __init__
-        self.sel_detail_meta_li = wp.get(
-            "detail_meta_list",
-            "ul.list-unstyled.job-meta > li"  
-        )
 
 
     # ---------------- entry ----------------
     async def scrape_jobs(self) -> List[Dict[str, Any]]:
+        start_time = datetime.now()
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(
@@ -76,6 +68,10 @@ class SalesforceScraper:
                 await context.close()
                 await browser.close()
 
+            end_time = datetime.now()
+            duration = (end_time - start_time).total_seconds()
+            self.scraping_duration = duration
+            self.logger.info(f"Scraping duration: {duration:.2f} seconds")
             self.logger.info(f"Salesforce scraping finished. Total jobs collected: {len(self.scraped)}")
             return self.scraped
 
@@ -303,36 +299,6 @@ class SalesforceScraper:
             pass
         return items
 
-    def _pick_location(self, metas: List[str]) -> str:
-        """
-        Collect all location-like entries from the meta list and return
-        a single string joined by ', '.
-        """
-        locs: List[str] = []
-
-        for t in metas:
-            # skip non-location meta items
-            if re.search(r"\bPosted\b", t, re.I):      continue
-            if re.search(r"\bFull[-\s]?time|Part[-\s]?time|Contract\b", t, re.I): continue
-            if re.search(r"\bJR\d+\b", t, re.I):       continue
-            if re.search(r"\bSalary\b", t, re.I):      continue
-
-            # heuristics: entries that look like locations:
-            #   'California - San Francisco'  or contain a hyphenized city/state,
-            #   or items that the page groups with other locations via '/'
-            if " - " in t or re.search(r"\b[A-Za-z].*,\s*[A-Za-z]", t):
-                locs.extend(self._split_locations(t))
-
-        if not locs:
-            # Fallback: first meta that isn't obviously non-location
-            for t in metas:
-                if not re.search(r"\b(Posted|JR\d+|Full|Part|Salary)\b", t, re.I):
-                    locs = self._split_locations(t)
-                    break
-
-        locs = self._dedupe_preserve_order(locs)
-        return ", ".join(locs)
-
     async def _extract_posted_date(self, page: Page, metas: List[str]) -> Optional[str]:
         # 1) <time datetime="YYYY-MM-DD">
         try:
@@ -408,18 +374,6 @@ class SalesforceScraper:
                 out.append(p)
         return out
 
-    def _dedupe_preserve_order(self, seq: List[str]) -> List[str]:
-        seen = set(); out = []
-        for x in seq:
-            if x not in seen:
-                seen.add(x); out.append(x)
-        return out
-
-    def _split_locations(self, text: str) -> List[str]:
-        # Split on "/", "|" or "•" but not on commas inside a single location
-        parts = re.split(r"\s*[\/|•]\s*", text)
-        return [re.sub(r"\s+", " ", p).strip() for p in parts if p and p.strip()]
-
     def _page_url(self, n: int) -> str:
         # Keep the #results anchor if present so the view jumps to the list
         frag = "#results" if self.base_url.endswith("#results") else ""
@@ -432,13 +386,4 @@ class SalesforceScraper:
             base = f"{base}{sep}page={n}"
 
         return base + frag
-
-
-
-
-
-
-
-
-
 

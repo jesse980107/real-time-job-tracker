@@ -1,0 +1,25 @@
+{
+    "website_info": {
+        "name": "Microsoft Careers",
+        "base_url": "https://jobs.careers.microsoft.com/global/en/search",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 5,
+        "sleep_after_nav_ms": 1000,
+        "sleep_after_open_ms": 300,
+        "apply_filters_via_ui": false,
+        "locations": [
+            "United States",
+            "Canada"
+        ]
+    },
+    "playwright_options": {
+        "results_link_selector": "button[aria-label*='Click to see details'], a[href*='/job/']",
+        "show_more_button": "button:has-text('Next'), [aria-label*='next' i]",
+        "detail_title": "h1",
+        "detail_description": "[data-automation-id='jobDescription'], .job-description, main",
+        "job_card_selector": "div[data-automation-id='listCell'], div[role='listitem'], .ms-list-cell",
+        "see_details_button": "button[class*='seeDetailsLink'], button[aria-label*='Click to see details']"
+    }
+}

@@ -11,9 +11,6 @@
     "sleep_after_open_ms": 700
   },
   "playwright_options": {
-    "wait_timeout": 35000,
-    "page_load_timeout": 45000,
-
     "results_container": "#js-job-search-results, .job-listing",
     "card_selector": ".card.card-job",
     "card_link_selector": "a.stretched-link.js-view-job",
