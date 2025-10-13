@@ -1,0 +1,25 @@
+{
+    "website_info": {
+        "name": "Tesla Careers",
+        "base_url": "https://www.tesla.com/careers/search/",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 50,
+        "sleep_after_nav_ms": 2000,
+        "sleep_after_open_ms": 1000,
+        "apply_filters_via_ui": false,
+        "locations": []
+    },
+    "playwright_options": {
+        "results_link_selector": "a[href*='/careers/'], .job-link, .position-link, table a",
+        "show_more_button": "button[aria-label*='Next'], .load-more-button, button:has-text('Load more')",
+        "detail_title": "h1, .job-title, .position-title",
+        "detail_description": ".job-description, .description, .job-details",
+        "job_card_selector": "tr, .job-item, .position-item",
+        "see_details_button": "a[href*='/careers/'], .job-link",
+        "pagination_button": "button[aria-label*='Next'], .pagination-next, button:has-text('Next')",
+        "job_summary_selector": ".job-description, .description",
+        "job_qualifications_selector": ".qualifications, .requirements"
+    }
+}

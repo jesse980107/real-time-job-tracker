@@ -1,0 +1,28 @@
+{
+    "website_info": {
+        "name": "Morgan Stanley Careers",
+        "base_url": "https://www.morganstanley.com/careers/career-opportunities-search",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 105,
+        "sleep_after_nav_ms": 1500,
+        "sleep_after_open_ms": 800,
+        "apply_filters_via_ui": false,
+        "result_limit": 10,
+        "locations": [
+            "United States",
+            "Canada"
+        ]
+    },
+    "playwright_options": {
+        "results_link_selector": ".cmp-jobcard__content, .cmp-jobcard__link, [data-analytics-link*='jobcard']",
+        "show_more_button": ".arrow.next, a.arrow.next, .pagination .arrow.next, a[aria-label*='Next'], .pagination a:has-text('Next'), button:has-text('Next')",
+        "detail_title": "h1, .job-title",
+        "detail_description": ".job-description, .description_section, [role='main']",
+        "job_card_selector": ".cmp-jobcard, [class*='jobcard'], [data-analytics-link*='jobcard']",
+        "see_details_button": ".cmp-jobcard__content, .cmp-jobcard__link, [data-analytics-link*='jobcard']",
+        "pagination_selector": ".opportunity.pagination a, .pagination a",
+        "apply_now_button": "a:has-text('APPLY NOW'), .button--done[data-analytics-link*='Apply']"
+    }
+}

@@ -1,0 +1,34 @@
+{
+  "enabled": true,
+  "base_url": "https://careers.wbd.com/global/en/search-results",
+  "location_params": {
+    "countries": ["United States of America", "Canada"]
+  },
+  "max_jobs": 10,
+  "playwright": {
+    "wait_for_selector": "[data-ph-at-id='job-link']",
+    "timeout": 30000
+  },
+  "selectors": {
+    "job_cards": "[data-ph-at-id='job-link']",
+    "job_title": "[data-ph-at-id='job-title']",
+    "job_location": "[data-ph-at-id='location-name-link']",
+    "job_link": "[data-ph-at-id='job-link']",
+    "job_id": "[data-ph-at-id='job-title']"
+  },
+  "job_detail_selectors": {
+    "title": "h1",
+    "location": "[data-ph-at-text='location-text']",
+    "job_type": "[data-ph-at-text='job-type-text']",
+    "job_id": "[data-ph-at-text='jobId-text']",
+    "business": "[data-ph-at-text='business-text']",
+    "description": "[data-ph-at-id='job-description']",
+    "requirements": "[data-ph-at-id='job-description']"
+  },
+  "data_mapping": {
+    "jobId_prefix": "WarnerBros_",
+    "company": "Warner Bros. Discovery",
+    "source": "Warner Bros",
+    "status": "active"
+  }
+}

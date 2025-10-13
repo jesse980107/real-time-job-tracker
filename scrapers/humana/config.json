@@ -1,0 +1,25 @@
+{
+    "website_info": {
+        "name": "Humana Careers",
+        "base_url": "https://careers.humana.com/us/en/search-results",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 5,
+        "sleep_after_nav_ms": 2000,
+        "sleep_after_open_ms": 1000,
+        "apply_filters_via_ui": false,
+        "locations": []
+    },
+    "playwright_options": {
+        "results_link_selector": "h3 a, .phw-search-results-v1 a[href*='/job/']",
+        "show_more_button": "button:has-text(Next), a:has-text(Next)",
+        "detail_title": "h1",
+        "detail_description": ".phw-job-description, .job-description, main",
+        "job_card_selector": "li, .phw-card-block",
+        "see_details_button": "h3 a, .phw-search-results-v1 a[href*='/job/']",
+        "pagination_button": "a[aria-label*='Next'], button[aria-label*='Next'], .phw-pagination-next-link",
+        "job_summary_selector": ".phw-job-description, .job-description",
+        "job_qualifications_selector": ".qualifications, .phw-job-qualifications"
+    }
+}

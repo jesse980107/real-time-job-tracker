@@ -1,0 +1,32 @@
+{
+    "website_info": {
+        "name": "JPMorgan Chase Careers",
+        "base_url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 5,
+        "sleep_after_nav_ms": 2000,
+        "sleep_after_open_ms": 1000,
+        "apply_filters_via_ui": false,
+        "result_limit": 20,
+        "locations": [
+            "United States",
+            "Canada"
+        ],
+        "location_ids": {
+            "United States": "300000000289738",
+            "Canada": "300000000289162"
+        }
+    },
+    "playwright_options": {
+        "results_link_selector": "a.job-grid-item__link, a[href*='/preview/']",
+        "show_more_button": "button[aria-label*='Next'], button:has-text('Next'), .pagination-next",
+        "detail_title": "h1.heading.job-details__title, h1",
+        "detail_description": "div:has-text('JOB DESCRIPTION'), div:has-text('Organization Description')",
+        "job_card_selector": "div.job-grid-item, .job-tile",
+        "see_details_button": "a.job-grid-item__link",
+        "job_info_section": "div:has-text('JOB INFORMATION')",
+        "job_meta_item": "li.job-meta__item"
+    }
+}

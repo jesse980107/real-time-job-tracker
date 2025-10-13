@@ -1,0 +1,34 @@
+{
+    "website_info": {
+        "name": "TikTok Careers",
+        "base_url": "https://lifeattiktok.com/search",
+        "enabled": true
+    },
+    "scraping_config": {
+        "max_jobs": 5,
+        "sleep_after_nav_ms": 2000,
+        "sleep_after_open_ms": 1000,
+        "apply_filters_via_ui": true,
+        "usa_locations": [
+            "Ashburn", "Austin", "Chicago", "Hillsboro", "Los Angeles", 
+            "Mountain View", "Nashville", "New York", "San Francisco", 
+            "San Jose", "Scottsdale", "Seattle", "Washington D.C."
+        ],
+        "canada_locations": [
+            "Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa"
+        ]
+    },
+    "playwright_options": {
+        "results_link_selector": "a[href*='/search/']",
+        "show_more_button": "button:has-text('2'), button:has-text('3'), button:has-text('Next'), [aria-label*='next' i]",
+        "detail_title": "h1",
+        "detail_description": "div:has-text('Responsibilities'), main",
+        "job_card_selector": "div:has(h3), section:has(h3)",
+        "see_details_button": "a[href*='/search/']",
+        "pagination_container": "div:has-text('Show') ~ div",
+        "pagination_numbers": "button:has-text('2'), button:has-text('3'), button:has-text('4')",
+        "location_dropdown": "div:has-text('Location')",
+        "location_input": "input[placeholder*='location' i]",
+        "job_title_link": "h3 a, a:has(h3)"
+    }
+}
